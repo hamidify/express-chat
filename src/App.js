@@ -2,6 +2,7 @@ import io from "socket.io-client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
 import "./App.css";
+import JDenticon from "react-jdenticon";
 
 let socket;
 function App() {
@@ -10,7 +11,7 @@ function App() {
   const [choosenRoom, setChosenRoom] = useState('');
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [rooms, setRooms] = useState(['1', '2']);
+  const [rooms, setRooms] = useState([]);
   const [roomUsers, setRoomUsers] = useState([]);
 
 
@@ -135,7 +136,7 @@ function App() {
                   {messages.map((msg, i) => {
                     return (
                       <div key={i}>
-                        {msg.sender} : <i> {msg.message}</i>
+                        <JDenticon size="20" style={{ width: '100px' }} value={msg.sender} /> {msg.sender}: <i> {msg.message}</i>
                       </div>
                     );
                   })}
