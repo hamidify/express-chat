@@ -1,43 +1,45 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
+const express = require('express');
+const app = express();
+const http = require('http');
+const cors = require('cors');
+const { Server } = require('socket.io');
+const { addNewUser, kickoutUser, getUser, listUsers } = require('./utils/users');
 
-var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
-
-var app = express();
-
-// view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "jade");
-
-app.use(logger("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "build")));
-
-app.use("/api", indexRouter);
-app.get("*", (req, res) => {
-  res.sendFile("client/index.html", { root: global });
+app.use(cors());
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:3001',
+    methods: ['GET', 'POST'],
+  },
 });
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404));
+io.on('connect', (socket) => {
+  socket.on('joining', ({ username: name, room: roomname }) => {
+    const { user } = addNewUser({ id: socket.id, username: name, room: roomname });
+    const { room, username } = user;
+    socket.join(room);
+    socket.emit('newMessage', { username: 'Server', message: ` Greetings ${username}, welcome to room ${room}.` });
+    io.to(room).emit('newMessage', { username: 'Server', message: `${username} has joined!` });
+    io.to(room).emit('usersInRoom', { room, users: listUsers(room) });
+  });
+
+  socket.on('sendMessage', (message) => {
+    const user = getUser(socket.id);
+    const { username, room } = user;
+    io.to(room).emit('newMessage', { username, message });
+  });
+
+  socket.on('disconnect', () => {
+    const user = kickoutUser(socket.id);
+    if (user) {
+      const { room, username } = user;
+      io.to(room).emit('newMessage', { username: 'Server', message: `${username} has left.` });
+      io.to(room).emit('usersInRoom', { users: listUsers(room) });
+    }
+  })
 });
 
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render("error");
-});
-
+server.listen(5000, () => 'Server is running on port 5000');
 module.exports = app;
