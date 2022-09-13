@@ -3,7 +3,7 @@ const app = express();
 const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
-const { addNewUser, kickoutUser, getUser, listUsers } = require('./utils/users');
+const { addNewUser, kickoutUser, getUser, listUsers, listRooms } = require('./utils/users');
 
 app.use(cors());
 const server = http.createServer(app);
@@ -19,10 +19,12 @@ io.on('connect', (socket) => {
     const { user } = addNewUser({ id: socket.id, username: name, room: roomname });
     const { room, username } = user;
     socket.join(room);
+    io.sockets.emit('rooms', { rooms: listRooms() })
     socket.emit('newMessage', { username: 'Server', message: ` Greetings ${username}, welcome to room ${room}.` });
     io.to(room).emit('newMessage', { username: 'Server', message: `${username} has joined!` });
-    io.to(room).emit('usersInRoom', { room, users: listUsers(room) });
+    io.to(room).emit('usersInRoom', { users: listUsers(room) });
   });
+
 
   socket.on('sendMessage', (message) => {
     const user = getUser(socket.id);
@@ -36,6 +38,7 @@ io.on('connect', (socket) => {
       const { room, username } = user;
       io.to(room).emit('newMessage', { username: 'Server', message: `${username} has left.` });
       io.to(room).emit('usersInRoom', { users: listUsers(room) });
+      io.sockets.emit('rooms', { rooms: listRooms() })
     }
   })
 });

@@ -1,4 +1,8 @@
 const users = [];
+const listRooms = () => {
+  const rooms = [...new Set([...users.map((user) => user.room)])]
+  return rooms || [];
+}
 
 const getUser = (id) => users.filter((user) => user.id === id)[0];
 
@@ -20,4 +24,4 @@ const kickoutUser = (id) => {
 
 const listUsers = (room) => users.filter((user) => user.room === room);
 
-module.exports = { addNewUser, kickoutUser, getUser, listUsers };
+module.exports = { addNewUser, kickoutUser, getUser, listUsers, listRooms };

@@ -26,10 +26,13 @@ function App() {
         { sender: msg.username, message: msg.message },
       ]);
     });
-
     socket.on("usersInRoom", ({ users }) => {
       setRoomUsers(users);
     });
+
+    socket.on('rooms', (({ rooms }) => {
+      setRooms([...rooms])
+    }))
   }, []);
 
   const joinRoom = useCallback((room) => {
@@ -83,7 +86,7 @@ function App() {
             {rooms.map((room, i) => {
               return (
                 <p
-                  style={{ display: 'block' }}
+                  style={{ color: 'blue', cursor: 'pointer' }}
                   onClick={() => joinRoom(room)}
                   key={i}
                 >
